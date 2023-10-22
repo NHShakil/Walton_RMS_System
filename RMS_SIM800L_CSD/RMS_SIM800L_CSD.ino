@@ -1,12 +1,16 @@
 #include "defines.h"
 String URI =  SRV_IP + PROJECT_PATH;
 String URL = "";
-int val[1024] = {};
+String val = "";
+String arr[] = {};
+#define ADDR_Ax 0b000 //A2, A1, A0
+#define ADDR (0b1010 << 3) + ADDR_Ax
 void setup()
 {
   DEBUG.begin(DEBUG_BAUD_RATE);
   // UART2 Configuration
   MODEM.begin(MODEM_BAUD_RATE);
+  Wire.begin();
   // UART1 Configuration
   uart_config_t Configurazione_UART1 = {
     .baud_rate = UART1_ODU_BAUD_RATE,
@@ -31,11 +35,43 @@ void loop() {
   Send_GET_Rqst(URL);
   //sendGetRequest(URL);
   PRAM = "";
-  
-  
   delay(3000);
+  DEBUG.println("**********************  START  ********************** ");
+  DEBUG.println(val);
+  //explode(",", val);
+  for (int b = 0; b < 255; b++) {
+    DEBUG.println(readI2CByte(b));
+  }
+  DEBUG.println("**********************   END   ********************** ");
+  val = "";
 }
+void explode (char delim[], String rcv_Str) {
+  int str_len = rcv_Str.length() + 1;
+  int a = 1;
+  char char_array[str_len], rslt_Arr[str_len];
+  rcv_Str.toCharArray(char_array, str_len);
+  char *ptr = strtok(char_array, delim);
 
+  while (ptr != NULL)
+  {
+    //Serial.print("\t ADD: "); Serial.print(a);
+    //Serial.print("\t TXD: "); Serial.print(ptr);
+    //Serial.print("\t RXD: ");printf("%s\n", ptr);// Serial.println(*ptr);
+    //Serial.println("");
+    //writeI2CByte(a, *ptr);
+    //    Wire.beginTransmission(ADDR_ONE);
+    //    Wire.write(a);
+    //    Wire.write(*ptr);
+    //    Wire.endTransmission();
+    //delay(50);
+    //    ptr = strtok(NULL, delim);
+    //    a++;
+  }
+  //printf("\n");
+
+
+
+}
 
 static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
 {
@@ -63,18 +99,16 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
               url_pram += ",";
             }
           }
-
-          //Serial.println(url_pram);
           URL = URI + url_pram;
           //rd_buff = true;
           url_pram = "";
         }
-        //DEBUG.println("");
+
       }
       else if (event.type == UART_FRAME_ERR) {
-        //TODO...
+
       } else {
-        //TODO...
+
       }
     }
     if (exit_condition) {
@@ -84,10 +118,9 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
   vTaskDelete(NULL);
 }
 void updateSerial() {
-  delay(500);
+  delay(100);
   while (DEBUG.available())
   {
-
     MODEM.write(DEBUG.read());//Forward what Serial received to Software Serial Port
   }
   while (MODEM.available())
@@ -95,17 +128,17 @@ void updateSerial() {
     DEBUG.write(MODEM.read());//Forward what Software Serial received to Serial Port
   }
 }
-void getUpdateSerial() {
-  delay(500);
+
+void getData() {
+  delay(200);
   while (DEBUG.available())
   {
-
-    MODEM.write(DEBUG.read());//
+    MODEM.write(DEBUG.read());//Forward what Serial received to Software Serial Port
   }
   while (MODEM.available())
   {
-    val += MODEM.read();
-    DEBUG.write(MODEM.read());//Forward what Software Serial received to Serial Port
+    val.concat((char) MODEM.read());
+    //DEBUG.write(MODEM.read());//Forward what Software Serial received to Serial Port
   }
 }
 
@@ -117,7 +150,7 @@ void test_sim800_module()
   MODEM.println("AT+CREG?");  updateSerial();
   MODEM.println("ATI");  updateSerial();
   MODEM.println("AT+CBC"); updateSerial();
-  MODEM.println("AT+CUSD=1,\"2#\""); getUpdateSerial();
+  MODEM.println("AT+CUSD=1,\"2#\""); updateSerial();
 
 }
 
@@ -140,6 +173,7 @@ void gsm_config_gprs() {
 
 void Send_GET_Rqst(String Data) {
   //"AT+CIPSHUT"
+  DEBUG.println("Sending Data To Server: ");
   DEBUG.println("[URL] : " + Data );
   MODEM.println("AT+HTTPINIT\r\n"); updateSerial();
   MODEM.println("AT+HTTPPARA=\"CID\",1\r\n"); updateSerial();
@@ -150,7 +184,85 @@ void Send_GET_Rqst(String Data) {
   MODEM.println("AT+HTTPPARA=URL,\"" + Data +  "\"\r\n"); updateSerial();
   MODEM.println("AT+HTTPPARA=\"CONTENT\",\"application / text\""); updateSerial();
   MODEM.println("AT + HTTPACTION = 0\r\n"); delay(3000); updateSerial();
-  MODEM.println("AT+HTTPREAD"); delay(5000); updateSerial();
+  MODEM.println("AT+HTTPREAD"); delay(3000); getData();
   MODEM.println("AT + HTTPTERM\r\n"); updateSerial();
-  
 }
+
+//void write_data(char chkData[]) {
+//  Serial.println("IDU Data Writing Start: ");
+//  for (int j = 0; j < arr_counter; j++) {
+//    Serial.print("ADD: "); Serial.print(j);
+//    Serial.print("\t TX: 0x"); Serial.println(chkData[j], HEX);
+//    writeI2CByte(j, chkData[j]);
+//    delay(10);
+//  }
+//}
+//void writeI2CByte(int wr_data_addr, int wrtData) {
+//
+//  //Serial.print("\t ADD: "); Serial.print(wrtData);
+//  Serial.print("\t RXD: "); Serial.println(wrtData, DEC);
+//
+//  Wire.beginTransmission(ADDR_ONE);
+//  Wire.write(wr_data_addr);
+//  Wire.write(wrtData);
+//  Wire.endTransmission();
+//  delay(30);
+//}
+
+void read_data() {
+  short tempRdData;
+  Serial.println("ODU Data Reading Start: ");
+  for (int i = 0; i < arr_counter; i++) {
+    Serial.print("ADD: "); Serial.print(i);
+    tempRdData = readI2CByte(i);
+    chkSum += tempRdData;
+    delay(10);
+  }
+  Serial.println();
+  Serial.print("Check Sum: ");
+  Serial.println(chkSum, HEX);
+  chkSum = 0;
+}
+
+//byte readI2CByte(byte data_addr) {
+//
+
+byte readI2CByte(byte data_addr) {
+  byte data = NULL;
+  Wire.beginTransmission(ADDR);
+  Wire.write(data_addr);
+  Wire.endTransmission();
+  Wire.requestFrom(ADDR, 1); //retrieve 1 returned byte
+  delay(1);
+  if (Wire.available()) {
+    data = Wire.read();
+  }
+  return data;
+}
+//  if (data_addr <= 256) {
+//    byte rdData = NULL;
+//    Wire.beginTransmission(ADDR_ONE);
+//    Wire.write(data_addr);
+//    Wire.endTransmission();
+//    Wire.requestFrom(ADDR_ONE, 1);  //retrieve 1 returned byte
+//    delay(1);
+//    if (Wire.available()) {
+//      rdData = Wire.read();
+//    }
+//    Serial.print("\t RX: 0x"); Serial.println(rdData, HEX);
+//    return rdData;
+//  }
+//  if (data_addr > 256) {
+//    byte rdData = NULL;
+//    Wire.beginTransmission(ADDR_TWO);
+//    Wire.write(data_addr);
+//    Wire.endTransmission();
+//    Wire.requestFrom(ADDR_TWO, 1);  //retrieve 1 returned byte
+//    delay(1);
+//    if (Wire.available()) {
+//      rdData = Wire.read();
+//    }
+//    Serial.print("\t RX: 0x"); Serial.println(rdData, HEX);
+//    return rdData;
+//  }
+//}
