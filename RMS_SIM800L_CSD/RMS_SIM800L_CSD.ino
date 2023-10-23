@@ -38,10 +38,10 @@ void loop() {
   delay(3000);
   DEBUG.println("**********************  START  ********************** ");
   DEBUG.println(val);
-  //explode(",", val);
-  for (int b = 0; b < 255; b++) {
-    DEBUG.println(readI2CByte(b));
-  }
+  explode(",", val);
+  //  for (int b = 0; b < 255; b++) {
+  //    DEBUG.println(readI2CByte(b));
+  //  }
   DEBUG.println("**********************   END   ********************** ");
   val = "";
 }
@@ -51,23 +51,26 @@ void explode (char delim[], String rcv_Str) {
   char char_array[str_len], rslt_Arr[str_len];
   rcv_Str.toCharArray(char_array, str_len);
   char *ptr = strtok(char_array, delim);
-
+  int decimalVal = 0;
   while (ptr != NULL)
   {
-    //Serial.print("\t ADD: "); Serial.print(a);
-    //Serial.print("\t TXD: "); Serial.print(ptr);
-    //Serial.print("\t RXD: ");printf("%s\n", ptr);// Serial.println(*ptr);
-    //Serial.println("");
-    //writeI2CByte(a, *ptr);
-    //    Wire.beginTransmission(ADDR_ONE);
-    //    Wire.write(a);
-    //    Wire.write(*ptr);
-    //    Wire.endTransmission();
-    //delay(50);
-    //    ptr = strtok(NULL, delim);
-    //    a++;
+    int  strLen = strlen(ptr);
+    Serial.print("RX : "); Serial.print(ptr);
+    for (int i = 0; i < strLen; i++) {
+      decimalVal +=  (ptr[i] - '0') * pow(10, (strLen - 1 - i));
+    }
+
+    Serial.print("\t FNL : "); Serial.println(decimalVal);
+    Wire.beginTransmission(ADDR_ONE);
+    Wire.write(a);
+    Wire.write(decimalVal);
+    Wire.endTransmission();
+    decimalVal = 0;
+    delay(10);
+    ptr = strtok(NULL, delim);
+    a++;
   }
-  //printf("\n");
+
 
 
 
@@ -197,17 +200,16 @@ void Send_GET_Rqst(String Data) {
 //    delay(10);
 //  }
 //}
-//void writeI2CByte(int wr_data_addr, int wrtData) {
-//
-//  //Serial.print("\t ADD: "); Serial.print(wrtData);
-//  Serial.print("\t RXD: "); Serial.println(wrtData, DEC);
-//
-//  Wire.beginTransmission(ADDR_ONE);
-//  Wire.write(wr_data_addr);
-//  Wire.write(wrtData);
-//  Wire.endTransmission();
-//  delay(30);
-//}
+void writeI2CByte(int wr_data_addr, int wrtData) {
+
+  //Serial.print("\t ADD: "); Serial.print(wrtData);
+  //Serial.print("\t RXD: "); Serial.println(wrtData, DEC);
+  Wire.beginTransmission(ADDR_ONE);
+  Wire.write(wr_data_addr);
+  Wire.write(wrtData);
+  Wire.endTransmission();
+  delay(30);
+}
 
 void read_data() {
   short tempRdData;
