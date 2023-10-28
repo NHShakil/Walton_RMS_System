@@ -47,40 +47,18 @@ void loop() {
   DEBUG.println("**********************   END   ********************** ");
   val = "";
 }
-//void explode (char delim[], String rcv_Str) {
-//  int str_len = rcv_Str.length() + 1;
-//  int a = 0, c = 0;
-//  char char_array[str_len], rslt_Arr[str_len];
-//  rcv_Str.toCharArray(char_array, str_len);
-//  char *ptr = strtok(char_array, delim);
-//  int decimalVal = 0;
-//  int strt_pos = 0, totl_Elmnt = 0;
-
-//
-//  if (a > 0 ) {
-//    Serial.print("RX DATA : "); Serial.print(ptr);
-//    DEBUG.print("\t ADDR : "); DEBUG.print(a);
-//    DEBUG.print("\t DECM : "); DEBUG.println(decimalVal);
-//    //writeI2CByte(a, decimalVal);
-//    //EE_Data[c] = decimalVal;
-//  }
-//  decimalVal = 0;
-//  ptr = strtok(NULL, delim);
-//  a++; c++;
-//}
 void explode (char delim[], String rcv_Str) {
   int str_len = rcv_Str.length() + 1;
-  int a = 0;
+  int a = 0, c = 0;
   char char_array[str_len], rslt_Arr[str_len];
   rcv_Str.toCharArray(char_array, str_len);
   char *ptr = strtok(char_array, delim);
   int decimalVal = 0;
-  int strt_pos = 0, totl_Elmnt = 1024;
+  int strt_pos = 0, totl_Elmnt = 0;
   DEBUG.println("-----------> Start Exploding: ");
   while (ptr != NULL)
   {
     int  strLen = strlen(ptr);
-
     for (int i = 0; i < strLen; i++) {
       decimalVal +=  (ptr[i] - '0') * pow(10, (strLen - 1 - i));
     }
@@ -90,29 +68,75 @@ void explode (char delim[], String rcv_Str) {
         DEBUG.print("\t STRT POS : "); DEBUG.print(strt_pos);
       }
       else if (a == 2) {
-        totl_Elmnt = decimalVal;
+        totl_Elmnt = decimalVal+3;
         DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
         //a = strt_pos;
       }
-      else if (a > 2) {
-        if ((a + 3) < totl_Elmnt - 1) {
-          DEBUG.print(" Add : "); DEBUG.print(strt_pos);
-          DEBUG.print("\t FNL : "); DEBUG.println(decimalVal);
-          //    Wire.beginTransmission(ADDR_ONE);
-          //    Wire.write(a);
-          //    Wire.write(decimalVal);
-          //    Wire.endTransmission();
-          //    delay(10);
-          strt_pos++;
-        }
+      else if ((a > 2) && (a <=totl_Elmnt)) {
+        //totl_Elmnt = decimalVal;
+        //DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
+        //strt_pos;
+        //Serial.print("RX DATA : "); Serial.print(ptr);
+        //DEBUG.print(" Val of A : "); DEBUG.print(strt_pos);
+        DEBUG.print(" Val A : "); DEBUG.print(a);
+        DEBUG.print("\t ADDR : "); DEBUG.print(strt_pos);
+        DEBUG.print("\t DECM : "); DEBUG.println(decimalVal);
+        writeI2CByte(strt_pos, decimalVal);
+        //EE_Data[c] = decimalVal;
+        strt_pos++;
       }
-      decimalVal = 0;
-      ptr = strtok(NULL, delim);
-      a++;
+
     }
-    DEBUG.println("-----------> END Exploding: ");
+    decimalVal = 0;
+    ptr = strtok(NULL, delim);
+    a++; c++;
   }
 }
+//void explode (char delim[], String rcv_Str) {
+//  int str_len = rcv_Str.length() + 1;
+//  int a = 0;
+//  char char_array[str_len], rslt_Arr[str_len];
+//  rcv_Str.toCharArray(char_array, str_len);
+//  char *ptr = strtok(char_array, delim);
+//  int decimalVal = 0;
+//  int strt_pos = 0, totl_Elmnt = 1024;
+//  DEBUG.println("-----------> Start Exploding: ");
+//  while (ptr != NULL)
+//  {
+//    int  strLen = strlen(ptr);
+//    for (int i = 0; i < strLen; i++) {
+//      decimalVal +=  (ptr[i] - '0') * pow(10, (strLen - 1 - i));
+//    }
+//    DEBUG.print("\t FNL : "); DEBUG.println(decimalVal);
+//    if (a > 0 ) {
+//      if (a == 1) {
+//        strt_pos = decimalVal;
+//        DEBUG.print("\t STRT POS : "); DEBUG.print(strt_pos);
+//      }
+//      else if (a == 2) {
+//        totl_Elmnt = decimalVal;
+//        DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
+//        //a = strt_pos;
+//      }
+//      else if (a > 2) {
+//        //if ((a + 3) < totl_Elmnt - 1) {
+//        DEBUG.print(" Add : "); DEBUG.print(strt_pos);
+//        DEBUG.print("\t FNL : "); DEBUG.println(decimalVal);
+//        //    Wire.beginTransmission(ADDR_ONE);
+//        //    Wire.write(a);
+//        //    Wire.write(decimalVal);
+//        //    Wire.endTransmission();
+//        //    delay(10);
+//        strt_pos++;
+//        //}
+//    }
+//    decimalVal = 0;
+//    ptr = strtok(NULL, delim);
+//    a++;
+//  }
+//  DEBUG.println("-----------> END Exploding: ");
+//}
+
 static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
 {
   uart_event_t event;
@@ -242,7 +266,7 @@ void Send_GET_Rqst(String Data) {
 //}
 void writeI2CByte(int wr_data_addr, int wrtData) {
   byte slaveAddr = ( wr_data_addr < 256 ) ? ADDR_ONE : ADDR_TWO;
-  Wire.beginTransmission(slaveAddr);
+  Wire.beginTransmission(ADDR_ONE);
   Wire.write(wr_data_addr);
   Wire.write(wrtData);
   Wire.endTransmission();
