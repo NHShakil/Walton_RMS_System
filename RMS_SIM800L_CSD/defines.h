@@ -18,7 +18,7 @@
 //#define ADDR_Ax 0b000 //A2, A1, A0
 //#define ADDR (0b1010 << 3) + ADDR_Ax
 #define ADDR_ONE 0x50
-//#define ADDR_TWO 0x51
+#define ADDR_TWO 0x51
 //#define ADDR_ONE 0x52
 //#define ADDR_TWO 0x53
 //#define IDU_ARR_LENGTH 255
