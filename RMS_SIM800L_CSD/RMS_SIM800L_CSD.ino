@@ -41,9 +41,11 @@ void loop() {
   DEBUG.println("**********************  START  ********************** ");
   DEBUG.println(val);
   explode(",", val);
-  //  for (int b = 0; b < 110; b++) {
-  //    DEBUG.println(EE_Data[b]);
-  //  }
+  read_data();
+//    for (int b = 0; b < 110; b++) {
+//      readI2CByte(b);
+//      //DEBUG.println(EE_Data[b]);
+//    }
   DEBUG.println("**********************   END   ********************** ");
   val = "";
 }
@@ -275,10 +277,11 @@ void writeI2CByte(int wr_data_addr, int wrtData) {
 
 void read_data() {
   short tempRdData;
-  Serial.println("ODU Data Reading Start: ");
+  Serial.println("IDU Data Reading Start: ");
   for (int i = 0; i < arr_counter; i++) {
     Serial.print("ADD: "); Serial.print(i);
     tempRdData = readI2CByte(i);
+    Serial.print("EE: "); Serial.println(tempRdData,HEX);
     chkSum += tempRdData;
     delay(10);
   }
@@ -300,30 +303,3 @@ byte readI2CByte(byte data_addr) {
   }
   return data;
 }
-//  if (data_addr <= 256) {
-//    byte rdData = NULL;
-//    Wire.beginTransmission(ADDR_ONE);
-//    Wire.write(data_addr);
-//    Wire.endTransmission();
-//    Wire.requestFrom(ADDR_ONE, 1);  //retrieve 1 returned byte
-//    delay(1);
-//    if (Wire.available()) {
-//      rdData = Wire.read();
-//    }
-//    Serial.print("\t RX: 0x"); Serial.println(rdData, HEX);
-//    return rdData;
-//  }
-//  if (data_addr > 256) {
-//    byte rdData = NULL;
-//    Wire.beginTransmission(ADDR_TWO);
-//    Wire.write(data_addr);
-//    Wire.endTransmission();
-//    Wire.requestFrom(ADDR_TWO, 1);  //retrieve 1 returned byte
-//    delay(1);
-//    if (Wire.available()) {
-//      rdData = Wire.read();
-//    }
-//    Serial.print("\t RX: 0x"); Serial.println(rdData, HEX);
-//    return rdData;
-//  }
-//}
