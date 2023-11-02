@@ -42,10 +42,6 @@ void loop() {
   DEBUG.println(val);
   explode(",", val);
   read_data();
-//    for (int b = 0; b < 110; b++) {
-//      readI2CByte(b);
-//      //DEBUG.println(EE_Data[b]);
-//    }
   DEBUG.println("**********************   END   ********************** ");
   val = "";
 }
@@ -94,51 +90,6 @@ void explode (char delim[], String rcv_Str) {
     a++; c++;
   }
 }
-//void explode (char delim[], String rcv_Str) {
-//  int str_len = rcv_Str.length() + 1;
-//  int a = 0;
-//  char char_array[str_len], rslt_Arr[str_len];
-//  rcv_Str.toCharArray(char_array, str_len);
-//  char *ptr = strtok(char_array, delim);
-//  int decimalVal = 0;
-//  int strt_pos = 0, totl_Elmnt = 1024;
-//  DEBUG.println("-----------> Start Exploding: ");
-//  while (ptr != NULL)
-//  {
-//    int  strLen = strlen(ptr);
-//    for (int i = 0; i < strLen; i++) {
-//      decimalVal +=  (ptr[i] - '0') * pow(10, (strLen - 1 - i));
-//    }
-//    DEBUG.print("\t FNL : "); DEBUG.println(decimalVal);
-//    if (a > 0 ) {
-//      if (a == 1) {
-//        strt_pos = decimalVal;
-//        DEBUG.print("\t STRT POS : "); DEBUG.print(strt_pos);
-//      }
-//      else if (a == 2) {
-//        totl_Elmnt = decimalVal;
-//        DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
-//        //a = strt_pos;
-//      }
-//      else if (a > 2) {
-//        //if ((a + 3) < totl_Elmnt - 1) {
-//        DEBUG.print(" Add : "); DEBUG.print(strt_pos);
-//        DEBUG.print("\t FNL : "); DEBUG.println(decimalVal);
-//        //    Wire.beginTransmission(ADDR_ONE);
-//        //    Wire.write(a);
-//        //    Wire.write(decimalVal);
-//        //    Wire.endTransmission();
-//        //    delay(10);
-//        strt_pos++;
-//        //}
-//    }
-//    decimalVal = 0;
-//    ptr = strtok(NULL, delim);
-//    a++;
-//  }
-//  DEBUG.println("-----------> END Exploding: ");
-//}
-
 static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
 {
   uart_event_t event;
@@ -207,7 +158,6 @@ void getData() {
     //    DEBUG.print("\tV:");
     //    DEBUG.println((char) MODEM.read());
     //    DEBUG.print(MODEM.read());
-
   }
 }
 
@@ -257,15 +207,6 @@ void Send_GET_Rqst(String Data) {
   MODEM.println("AT + HTTPTERM\r\n"); updateSerial();
 }
 
-//void write_data(char chkData[]) {
-//  Serial.println("IDU Data Writing Start: ");
-//  for (int j = 0; j < arr_counter; j++) {
-//    Serial.print("ADD: "); Serial.print(j);
-//    Serial.print("\t TX: 0x"); Serial.println(chkData[j], HEX);
-//    writeI2CByte(j, chkData[j]);
-//    delay(10);
-//  }
-//}
 void writeI2CByte(int wr_data_addr, int wrtData) {
   byte slaveAddr = ( wr_data_addr < 256 ) ? ADDR_ONE : ADDR_TWO;
   Wire.beginTransmission(ADDR_ONE);
