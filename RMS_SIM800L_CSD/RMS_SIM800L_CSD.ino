@@ -252,7 +252,7 @@ void Send_GET_Rqst(String Data) {
   MODEM.println("AT+HTTPINIT\r\n"); updateSerial();
   MODEM.println("AT+HTTPPARA=URL,\"" + Data +  "\"\r\n"); updateSerial();
   MODEM.println("AT+HTTPPARA=\"CONTENT\",\"application / text\""); updateSerial();
-  MODEM.println("AT + HTTPACTION = 0\r\n"); delay(2000); updateSerial();
+  MODEM.println("AT + HTTPACTION = 0\r\n"); delay(2500); updateSerial();
   MODEM.println("AT+HTTPREAD"); delay(2000); getData();
   MODEM.println("AT + HTTPTERM\r\n"); updateSerial();
 }
