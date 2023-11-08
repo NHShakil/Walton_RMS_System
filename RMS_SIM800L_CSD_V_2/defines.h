@@ -1,17 +1,7 @@
-#define DEV_ID 1
-#define MOB_NO 00000000000
-//#define SERIAL_CMD 0
-//#define EE_CMD 0
-#define EE_CHECK_SUM 0
-
-
-
 #include "driver/uart.h"
 #include "UART.h"
 #include "Http.h"
 #include <Wire.h>
-
-
 
 // UART Section
 #define DEBUG Serial
@@ -48,8 +38,7 @@ String apn_u = "";
 String apn_p = "";
 // Server Infors
 String SRV_IP = "http://103.243.142.11";
-//String PROJECT_PATH = "/ac_monitoring/controller/devlogs.php/?data="+DEV_ID+","+MOB_NO+","+EE_CHECK_SUM;
-String PROJECT_PATH = "/ac_monitoring/controller/devlogs.php/?data="
+String PROJECT_PATH = "/ac_monitoring/controller/devlogs.php/?data=";
 String PRAM = "";
 String Data = "";
 

@@ -8,6 +8,9 @@ static QueueHandle_t uart2_queue;
 
 static const char * TAG = "";
 
+
+
+
 uint8_t rxbuf[256];     //Buffer di ricezione
 uint16_t rx_fifo_len;        //Lunghezza dati
 
