@@ -30,6 +30,8 @@ void setup()
   //Configurations
   test_sim800_module(); delay(1000);
   gsm_config_gprs(); delay(1000);
+  //I2C_Bus_Scan(); delay(1000);
+  pinMode (ledPin, OUTPUT);
 }
 
 void loop() {
@@ -41,7 +43,7 @@ void loop() {
   DEBUG.println("**********************  START  ********************** ");
   DEBUG.println(val);
   explode(",", val);
-  read_data();
+  //read_data();
   DEBUG.println("**********************   END   ********************** ");
   val = "";
 }
@@ -60,30 +62,33 @@ void explode (char delim[], String rcv_Str) {
     for (int i = 0; i < strLen; i++) {
       decimalVal +=  (ptr[i] - '0') * pow(10, (strLen - 1 - i));
     }
-    if (a > 0 ) {
-      if (a == 1) {
-        strt_pos = decimalVal;
-        DEBUG.print("\t STRT POS : "); DEBUG.print(strt_pos);
+    int EE_Bus = I2C_Bus_Scan();
+    if (EE_Bus == 1)
+    {
+      if (a > 0 ) {
+        if (a == 1) {
+          strt_pos = decimalVal;
+          DEBUG.print("\t STRT POS : "); DEBUG.print(strt_pos);
+        }
+        else if (a == 2) {
+          totl_Elmnt = decimalVal + 3;
+          DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
+          //a = strt_pos;
+        }
+        else if ((a > 2) && (a <= totl_Elmnt)) {
+          //totl_Elmnt = decimalVal;
+          //DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
+          //strt_pos;
+          //Serial.print("RX DATA : "); Serial.print(ptr);
+          //DEBUG.print(" Val of A : "); DEBUG.print(strt_pos);
+          DEBUG.print(" Val A : "); DEBUG.print(a);
+          DEBUG.print("\t ADDR : "); DEBUG.print(strt_pos);
+          DEBUG.print("\t DECM : "); DEBUG.println(decimalVal);
+          writeI2CByte(strt_pos, decimalVal);
+          //EE_Data[c] = decimalVal;
+          strt_pos++;
+        }
       }
-      else if (a == 2) {
-        totl_Elmnt = decimalVal+3;
-        DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
-        //a = strt_pos;
-      }
-      else if ((a > 2) && (a <=totl_Elmnt)) {
-        //totl_Elmnt = decimalVal;
-        //DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
-        //strt_pos;
-        //Serial.print("RX DATA : "); Serial.print(ptr);
-        //DEBUG.print(" Val of A : "); DEBUG.print(strt_pos);
-        DEBUG.print(" Val A : "); DEBUG.print(a);
-        DEBUG.print("\t ADDR : "); DEBUG.print(strt_pos);
-        DEBUG.print("\t DECM : "); DEBUG.println(decimalVal);
-        writeI2CByte(strt_pos, decimalVal);
-        //EE_Data[c] = decimalVal;
-        strt_pos++;
-      }
-
     }
     decimalVal = 0;
     ptr = strtok(NULL, delim);
@@ -95,28 +100,38 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
   uart_event_t event;
   size_t buffered_size;
   bool exit_condition = false;
+  String ODU_PAC_ONE_Temp="";
+  String ODU_PAC_TWO_Temp="";
+  ODU_PAC_ONE = "";
+  ODU_PAC_TWO = "";
   while (1) {
-    //Loop will continually block (i.e. wait) on event messages from the event queue
     if (xQueueReceive(uart1_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
       if (event.type == UART_DATA) {
         uint8_t UART1_data[128];
         int UART1_data_length = 0;
         ESP_ERROR_CHECK(uart_get_buffered_data_len(UART_NUM_1, (size_t*)&UART1_data_length));
         UART1_data_length = uart_read_bytes(UART_NUM_1, UART1_data, UART1_data_length, 100);
-        //Serial.print("LEN= "); Serial.println(UART1_data_length);
         if (UART1_data_length == ODU_DATA_SIZE) {
-          //          DEBUG.print("DTA LEN : ");
-          //          DEBUG.println(UART1_data_length);
-          //          DEBUG.print(" ");
-          //          DEBUG.print(" DATA : ");
           if (UART1_data[0] == 170) {
+            ODU_PAC_ONE += "P1:";
             for (byte i = 0; i < UART1_data_length; i++) {
-              url_pram += (int) UART1_data[i];
-              url_pram += ",";
+              ODU_PAC_ONE_Temp += (int) UART1_data[i];
+              ODU_PAC_ONE_Temp += ",";
             }
+            ODU_PAC_ONE = ODU_PAC_ONE_Temp;
+            DEBUG.println(ODU_PAC_ONE);
           }
-          URL = URI + url_pram;
-          //rd_buff = true;
+          if (UART1_data[0] == 187 && UART1_data[1] == 2) {
+            ODU_PAC_TWO_Temp += ";P2:";
+            for (byte i = 0; i < UART1_data_length; i++) {
+              ODU_PAC_TWO_Temp += (int) UART1_data[i];
+              ODU_PAC_TWO_Temp += ",";
+            }
+            ODU_PAC_TWO = ODU_PAC_TWO_Temp;
+            DEBUG.println(ODU_PAC_TWO);
+          }
+          URL = URI + ODU_PAC_ONE + ODU_PAC_TWO;
+          ODU_PAC_TWO = "";
           url_pram = "";
         }
       }
@@ -131,6 +146,7 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
   vTaskDelete(NULL);
 }
 void updateSerial() {
+  digitalWrite (ledPin, LOW);
   delay(100);
   while (DEBUG.available())
   {
@@ -140,6 +156,7 @@ void updateSerial() {
   {
     DEBUG.write(MODEM.read());//Forward what Software Serial received to Serial Port
   }
+  digitalWrite (ledPin, HIGH);
 }
 
 void getData() {
@@ -170,7 +187,6 @@ void test_sim800_module()
   MODEM.println("ATI");  updateSerial();
   MODEM.println("AT+CBC"); updateSerial();
   MODEM.println("AT+CUSD=1,\"2#\""); updateSerial();
-
 }
 
 void gsm_config_gprs() {
@@ -222,7 +238,7 @@ void read_data() {
   for (int i = 0; i < arr_counter; i++) {
     Serial.print("ADD: "); Serial.print(i);
     tempRdData = readI2CByte(i);
-    Serial.print("EE: "); Serial.println(tempRdData,HEX);
+    Serial.print("EE: "); Serial.println(tempRdData, HEX);
     chkSum += tempRdData;
     delay(10);
   }
@@ -243,4 +259,43 @@ byte readI2CByte(byte data_addr) {
     data = Wire.read();
   }
   return data;
+}
+
+int I2C_Bus_Scan() {
+  byte error, address;
+  int nDevices;
+
+  Serial.println("Scanning...");
+
+  nDevices = 80;
+
+  WIRE.beginTransmission(address);
+  error = WIRE.endTransmission();
+
+  if (error == 0)
+  {
+    Serial.print("I2C device found at address 0x");
+    if (address < 16)
+      Serial.print("0");
+    Serial.print(address, HEX);
+    nDevices++;
+    return 1;
+  }
+  else if (error == 4)
+  {
+    Serial.print("Unknown error at address 0x");
+    if (address < 16)
+      Serial.print("0");
+    Serial.println(address, HEX);
+    return 0;
+  }
+
+  if (nDevices == 0) {
+    Serial.println("No I2C devices found\n");
+    return 0;
+  }
+  else {
+    Serial.println("done\n");
+    return 0;
+  }
 }

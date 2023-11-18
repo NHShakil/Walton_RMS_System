@@ -1,3 +1,8 @@
+#include "driver/uart.h"
+#include "UART.h"
+#include "Http.h"
+#include <Wire.h>
+#define WIRE Wire
 #define DEV_ID 1
 #define MOB_NO 00000000000
 //#define SERIAL_CMD 0
@@ -5,11 +10,10 @@
 #define EE_CHECK_SUM 0
 
 
+#define ODU_DATA_SIZE 38
 
-#include "driver/uart.h"
-#include "UART.h"
-#include "Http.h"
-#include <Wire.h>
+
+
 
 
 
@@ -36,7 +40,7 @@
 
 
 // GLOBAL VARIABL
-#define ODU_DATA_SIZE 38
+
 int oduData[ODU_DATA_SIZE];
 String url_pram = "";
 bool rd_buff = false;
@@ -49,8 +53,11 @@ String apn_p = "";
 // Server Infors
 String SRV_IP = "http://103.243.142.11";
 //String PROJECT_PATH = "/ac_monitoring/controller/devlogs.php/?data="+DEV_ID+","+MOB_NO+","+EE_CHECK_SUM;
-String PROJECT_PATH = "/ac_monitoring/controller/devlogs.php/?data="
+String PROJECT_PATH = "/ac_monitoring/controller/devlogs.php/?data={";
 String PRAM = "";
 String Data = "";
+String ODU_PAC_ONE = "";
+String ODU_PAC_TWO = "";
 
+const int ledPin = 26;
 short chkSum = 0, chkData = 0, arr_counter = 256;

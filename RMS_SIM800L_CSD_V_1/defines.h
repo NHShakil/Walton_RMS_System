@@ -5,7 +5,7 @@
 // UART Section
 #define DEBUG Serial
 
-#define DEBUG_BAUD_RATE 115200
+#define DEBUG_BAUD_RATE 9600
 #define UART1_ODU_BAUD_RATE 2400
 #define U1RXD 32
 #define U1TXD 33
