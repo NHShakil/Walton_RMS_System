@@ -2,14 +2,16 @@
 String URI =  SRV_IP + PROJECT_PATH;
 String URL = URI;
 String val = "";
-int EE_Data[] = {};
+String MobNo = "";
+String MobNoTemp = "";
+String IDU_EE_DATA ="";
+String ODU_EE_DATA ="";
 int memCount = 0;
 #define ADDR_Ax 0b000 //A2, A1, A0
 #define ADDR (0b1010 << 3) + ADDR_Ax
 void setup()
 {
   DEBUG.begin(DEBUG_BAUD_RATE);
-  // UART2 Configuration
   MODEM.begin(MODEM_BAUD_RATE);
   Wire.begin();
   // UART1 Configuration
@@ -28,15 +30,18 @@ void setup()
   xTaskCreate(UART_ISR_ROUTINE, "UART_ISR_ROUTINE", 2048, NULL, 12, NULL);
   //vTaskDelete(NULL);
   //Configurations
+
+
   test_sim800_module(); delay(1000);
   gsm_config_gprs(); delay(1000);
   //I2C_Bus_Scan(); delay(1000);
   pinMode (ledPin, OUTPUT);
+  //Send_GET_Rqst(SRV_IP + PROJECT_NAME + "controller/connect.php/?data=" +  DEV_ID + "," + MobNo, "1");
 }
 
 void loop() {
   DEBUG.println(URL);
-  Send_GET_Rqst(URL);
+  Send_GET_Rqst(URL + DEV_ID + ";" +  MOB_NO + ";"  + ";" + ODU_PAC_ONE + ODU_PAC_TWO+ ";" +IDU_EE_DATA+";"+ODU_EE_DATA, "0");
   //sendGetRequest(URL);
   PRAM = "";
   delay(3000);
@@ -62,7 +67,7 @@ void explode (char delim[], String rcv_Str) {
     for (int i = 0; i < strLen; i++) {
       decimalVal +=  (ptr[i] - '0') * pow(10, (strLen - 1 - i));
     }
-    int EE_Bus = I2C_Bus_Scan();
+    int EE_Bus = 0;//I2C_Bus_Scan();
     if (EE_Bus == 1)
     {
       if (a > 0 ) {
@@ -100,8 +105,8 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
   uart_event_t event;
   size_t buffered_size;
   bool exit_condition = false;
-  String ODU_PAC_ONE_Temp="";
-  String ODU_PAC_TWO_Temp="";
+  String ODU_PAC_ONE_Temp = "";
+  String ODU_PAC_TWO_Temp = "";
   ODU_PAC_ONE = "";
   ODU_PAC_TWO = "";
   while (1) {
@@ -130,7 +135,7 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
             ODU_PAC_TWO = ODU_PAC_TWO_Temp;
             DEBUG.println(ODU_PAC_TWO);
           }
-          URL = URI + ODU_PAC_ONE + ODU_PAC_TWO;
+          URL = URI; //+ ODU_PAC_ONE + ODU_PAC_TWO;
           ODU_PAC_TWO = "";
           url_pram = "";
         }
@@ -168,27 +173,37 @@ void getData() {
   }
   while (MODEM.available())
   {
-    //memCount++;
     val.concat((char) MODEM.read());
-    //    DEBUG.print("C:");
-    //    DEBUG.print(memCount);
-    //    DEBUG.print("\tV:");
-    //    DEBUG.println((char) MODEM.read());
-    //    DEBUG.print(MODEM.read());
   }
 }
 
 void test_sim800_module()
 {
+  //delay(10000);
   MODEM.println("AT");  updateSerial();
   MODEM.println("AT+CSQ");  updateSerial();
   MODEM.println("AT+CCID");  updateSerial();
   MODEM.println("AT+CREG?");  updateSerial();
   MODEM.println("ATI");  updateSerial();
   MODEM.println("AT+CBC"); updateSerial();
-  MODEM.println("AT+CUSD=1,\"2#\""); updateSerial();
+  //MODEM.println("AT+CUSD=1,\"2#\"");getMobNo();
+  //MobNo  = MobNoTemp.substring(51, 62);
+  //DEBUG.println(MobNo);
+  gsm_config_gprs(); delay(2000);
+  //Send_GET_Rqst(SRV_IP + PROJECT_NAME + "controller/connect.php/?data=" +  DEV_ID + "," + MOB_NO, "1");
+  //delay(3000);
 }
+void getMobNo() {
+  while (DEBUG.available())
+  {
+    MODEM.write(DEBUG.read());//Forward what Serial received to Software Serial Port
+  }
+  while (MODEM.available())
+  {
+    MobNoTemp.concat((char) MODEM.read());
+  }
 
+}
 void gsm_config_gprs() {
   Serial.println(" --- CONFIG GPRS --- ");
 
@@ -206,10 +221,9 @@ void gsm_config_gprs() {
   }
 }
 
-void Send_GET_Rqst(String Data) {
-  //"AT+CIPSHUT"
-  DEBUG.println("Sending Data To Server: ");
-  DEBUG.println("[URL] : " + Data );
+void Send_GET_Rqst(String Data, String methodPram) {
+  //DEBUG.println("Sending Data To Server: ");
+  //DEBUG.println("[URL] : " + Data );
   MODEM.println("AT+HTTPINIT\r\n"); updateSerial();
   MODEM.println("AT+HTTPPARA=\"CID\",1\r\n"); updateSerial();
   MODEM.println("AT+CREG?\r\n"); updateSerial();
@@ -218,7 +232,8 @@ void Send_GET_Rqst(String Data) {
   MODEM.println("AT+HTTPINIT\r\n"); updateSerial();
   MODEM.println("AT+HTTPPARA=URL,\"" + Data +  "\"\r\n"); updateSerial();
   MODEM.println("AT+HTTPPARA=\"CONTENT\",\"application / text\""); updateSerial();
-  MODEM.println("AT + HTTPACTION = 0\r\n"); delay(2500); updateSerial();
+  String ActionCMD = "AT + HTTPACTION = " + methodPram + "\r\n";
+  MODEM.println(ActionCMD); delay(2500); updateSerial();
   MODEM.println("AT+HTTPREAD"); delay(2000); getData();
   MODEM.println("AT + HTTPTERM\r\n"); updateSerial();
 }

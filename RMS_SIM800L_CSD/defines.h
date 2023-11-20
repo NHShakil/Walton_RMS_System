@@ -4,18 +4,13 @@
 #include <Wire.h>
 #define WIRE Wire
 #define DEV_ID 1
-#define MOB_NO 00000000000
+String MOB_NO = "01675702741";
 //#define SERIAL_CMD 0
 //#define EE_CMD 0
 #define EE_CHECK_SUM 0
 
 
 #define ODU_DATA_SIZE 38
-
-
-
-
-
 
 // UART Section
 #define DEBUG Serial
@@ -53,7 +48,8 @@ String apn_p = "";
 // Server Infors
 String SRV_IP = "http://103.243.142.11";
 //String PROJECT_PATH = "/ac_monitoring/controller/devlogs.php/?data="+DEV_ID+","+MOB_NO+","+EE_CHECK_SUM;
-String PROJECT_PATH = "/ac_monitoring/controller/devlogs.php/?data={";
+String PROJECT_NAME = "/ac_monitoring/";
+String PROJECT_PATH = "/ac_monitoring/controller/devlogs.php/?data=";
 String PRAM = "";
 String Data = "";
 String ODU_PAC_ONE = "";
