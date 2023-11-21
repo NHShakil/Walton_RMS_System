@@ -4,8 +4,8 @@ String URL = URI;
 String val = "";
 String MobNo = "";
 String MobNoTemp = "";
-String IDU_EE_DATA ="";
-String ODU_EE_DATA ="";
+String IDU_EE_DATA = "";
+String ODU_EE_DATA = "";
 int memCount = 0;
 #define ADDR_Ax 0b000 //A2, A1, A0
 #define ADDR (0b1010 << 3) + ADDR_Ax
@@ -41,7 +41,7 @@ void setup()
 
 void loop() {
   DEBUG.println(URL);
-  Send_GET_Rqst(URL + DEV_ID + ";" +  MOB_NO + ";"  + ";" + ODU_PAC_ONE + ODU_PAC_TWO+ ";" +IDU_EE_DATA+";"+ODU_EE_DATA, "0");
+  Send_GET_Rqst(URL + DEV_ID + ";" +  MOB_NO + ";"  + ";" + ODU_PAC_ONE + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
   //sendGetRequest(URL);
   PRAM = "";
   delay(3000);
@@ -118,22 +118,24 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
         UART1_data_length = uart_read_bytes(UART_NUM_1, UART1_data, UART1_data_length, 100);
         if (UART1_data_length == ODU_DATA_SIZE) {
           if (UART1_data[0] == 170) {
-            ODU_PAC_ONE += "P1:";
+            
             for (byte i = 0; i < UART1_data_length; i++) {
               ODU_PAC_ONE_Temp += (int) UART1_data[i];
               ODU_PAC_ONE_Temp += ",";
             }
-            ODU_PAC_ONE = ODU_PAC_ONE_Temp;
-            DEBUG.println(ODU_PAC_ONE);
+            //ODU_PAC_ONE = ODU_PAC_ONE_Temp;
+            DEBUG.print("INTRPT P1: ");
+            DEBUG.println(ODU_PAC_ONE_Temp);
           }
           if (UART1_data[0] == 187 && UART1_data[1] == 2) {
-            ODU_PAC_TWO_Temp += ";P2:";
+            
             for (byte i = 0; i < UART1_data_length; i++) {
               ODU_PAC_TWO_Temp += (int) UART1_data[i];
               ODU_PAC_TWO_Temp += ",";
             }
-            ODU_PAC_TWO = ODU_PAC_TWO_Temp;
-            DEBUG.println(ODU_PAC_TWO);
+            //ODU_PAC_TWO = ODU_PAC_TWO_Temp;
+            DEBUG.print("INTRPT P2: ");
+            DEBUG.println(ODU_PAC_TWO_Temp);
           }
           URL = URI; //+ ODU_PAC_ONE + ODU_PAC_TWO;
           ODU_PAC_TWO = "";
