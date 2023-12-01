@@ -127,16 +127,16 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
             DEBUG.print("INTRPT P1: ");
             DEBUG.println(ODU_PAC_ONE_Temp);
           }
-          if (UART1_data[0] == 187 && UART1_data[1] == 2) {
-            
-            for (byte i = 0; i < UART1_data_length; i++) {
-              ODU_PAC_TWO_Temp += (int) UART1_data[i];
-              ODU_PAC_TWO_Temp += ",";
-            }
-            //ODU_PAC_TWO = ODU_PAC_TWO_Temp;
-            DEBUG.print("INTRPT P2: ");
-            DEBUG.println(ODU_PAC_TWO_Temp);
-          }
+//          if (UART1_data[0] == 187 && UART1_data[1] == 2) {
+//            
+//            for (byte i = 0; i < UART1_data_length; i++) {
+//              ODU_PAC_TWO_Temp += (int) UART1_data[i];
+//              ODU_PAC_TWO_Temp += ",";
+//            }
+//            //ODU_PAC_TWO = ODU_PAC_TWO_Temp;
+//            DEBUG.print("INTRPT P2: ");
+//            DEBUG.println(ODU_PAC_TWO_Temp);
+//          }
           URL = URI; //+ ODU_PAC_ONE + ODU_PAC_TWO;
           ODU_PAC_TWO = "";
           url_pram = "";
