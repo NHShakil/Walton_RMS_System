@@ -40,17 +40,19 @@ void setup()
 }
 
 void loop() {
-  DEBUG.println(URL);
-  Send_GET_Rqst(URL + DEV_ID + ";" +  MOB_NO + ";"  + ";" + ODU_PAC_ONE + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
-  //sendGetRequest(URL);
-  PRAM = "";
-  delay(3000);
-  DEBUG.println("**********************  START  ********************** ");
-  DEBUG.println(val);
-  explode(",", val);
-  //read_data();
-  DEBUG.println("**********************   END   ********************** ");
-  val = "";
+  //  DEBUG.print("[P1:] ");
+  //  DEBUG.println(ODU_PAC_ONE);
+  //  DEBUG.print("[P2:] ");
+  DEBUG.println(URL + DEV_ID + ";" +  MOB_NO + ";"  +  ODU_PAC_ONE + ";" + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA);
+
+  //  Send_GET_Rqst(URL + DEV_ID + ";" +  MOB_NO + ";"  + ";" + ODU_PAC_ONE + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
+  //  DEBUG.println("**********************  START  ********************** ");
+  //  DEBUG.println(val);
+  //  explode(",", val);
+  //  read_data();
+  //  DEBUG.println("**********************   END   ********************** ");
+  //  val = "";
+  delay(2000);
 }
 void explode (char delim[], String rcv_Str) {
   int str_len = rcv_Str.length() + 1;
@@ -118,27 +120,28 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
         UART1_data_length = uart_read_bytes(UART_NUM_1, UART1_data, UART1_data_length, 100);
         if (UART1_data_length == ODU_DATA_SIZE) {
           if (UART1_data[0] == 170) {
-            
+
             for (byte i = 0; i < UART1_data_length; i++) {
               ODU_PAC_ONE_Temp += (int) UART1_data[i];
               ODU_PAC_ONE_Temp += ",";
             }
-            //ODU_PAC_ONE = ODU_PAC_ONE_Temp;
-            DEBUG.print("INTRPT P1: ");
-            DEBUG.println(ODU_PAC_ONE_Temp);
+            ODU_PAC_ONE = ODU_PAC_ONE_Temp;
+            
+
           }
-//          if (UART1_data[0] == 187 && UART1_data[1] == 2) {
-//            
-//            for (byte i = 0; i < UART1_data_length; i++) {
-//              ODU_PAC_TWO_Temp += (int) UART1_data[i];
-//              ODU_PAC_TWO_Temp += ",";
-//            }
-//            //ODU_PAC_TWO = ODU_PAC_TWO_Temp;
-//            DEBUG.print("INTRPT P2: ");
-//            DEBUG.println(ODU_PAC_TWO_Temp);
-//          }
-          URL = URI; //+ ODU_PAC_ONE + ODU_PAC_TWO;
-          ODU_PAC_TWO = "";
+          if (UART1_data[0] == 187 && UART1_data[1] == 2) {
+
+            for (byte i = 0; i < UART1_data_length; i++) {
+              ODU_PAC_TWO_Temp += (int) UART1_data[i];
+              ODU_PAC_TWO_Temp += ",";
+            }
+
+            ODU_PAC_TWO = ODU_PAC_TWO_Temp;
+            
+          }
+          //URL = URI; //+ ODU_PAC_ONE + ODU_PAC_TWO;
+          ODU_PAC_ONE_Temp = "";
+          ODU_PAC_TWO_Temp = "";
           url_pram = "";
         }
       }
