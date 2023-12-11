@@ -11,7 +11,9 @@ int memCount = 0;
 #define ADDR (0b1010 << 3) + ADDR_Ax
 void setup()
 {
-  DEBUG.begin(DEBUG_BAUD_RATE);
+  //SerialBT.begin("ESP32 Bluetooth"); // Comment this line after development
+  //DEBUG.begin(DEBUG_BAUD_RATE); // UART DEBUG
+  DEBUG.begin(DEBUG_BAUD_RATE);   // Bluetooth Debeug
   MODEM.begin(MODEM_BAUD_RATE);
   Wire.begin();
   // UART1 Configuration
@@ -43,16 +45,13 @@ void loop() {
   //  DEBUG.print("[P1:] ");
   //  DEBUG.println(ODU_PAC_ONE);
   //  DEBUG.print("[P2:] ");
-  DEBUG.println(URL + DEV_ID + ";" +  MOB_NO + ";"  +  ODU_PAC_ONE + ";" + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA);
-
-  //  Send_GET_Rqst(URL + DEV_ID + ";" +  MOB_NO + ";"  + ";" + ODU_PAC_ONE + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
-  //  DEBUG.println("**********************  START  ********************** ");
-  //  DEBUG.println(val);
-  //  explode(",", val);
-  //  read_data();
-  //  DEBUG.println("**********************   END   ********************** ");
-  //  val = "";
-  delay(2000);
+    Send_GET_Rqst(URL + DEV_ID + ";" +  MOB_NO + ";"  + ";" + ODU_PAC_ONE + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
+    DEBUG.println("**********************  START  ********************** ");
+    DEBUG.println(val);
+    explode(",", val);
+    DEBUG.println("**********************   END   ********************** ");
+    val = "";
+    delay(2000);
 }
 void explode (char delim[], String rcv_Str) {
   int str_len = rcv_Str.length() + 1;
@@ -126,8 +125,6 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
               ODU_PAC_ONE_Temp += ",";
             }
             ODU_PAC_ONE = ODU_PAC_ONE_Temp;
-            
-
           }
           if (UART1_data[0] == 187 && UART1_data[1] == 2) {
 
@@ -135,9 +132,7 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
               ODU_PAC_TWO_Temp += (int) UART1_data[i];
               ODU_PAC_TWO_Temp += ",";
             }
-
             ODU_PAC_TWO = ODU_PAC_TWO_Temp;
-            
           }
           //URL = URI; //+ ODU_PAC_ONE + ODU_PAC_TWO;
           ODU_PAC_ONE_Temp = "";
@@ -146,7 +141,6 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
         }
       }
       else if (event.type == UART_FRAME_ERR) {
-
       }
     }
     if (exit_condition) {
@@ -170,7 +164,6 @@ void updateSerial() {
 }
 
 void getData() {
-
   delay(200);
   while (DEBUG.available())
   {
@@ -191,24 +184,14 @@ void test_sim800_module()
   MODEM.println("AT+CREG?");  updateSerial();
   MODEM.println("ATI");  updateSerial();
   MODEM.println("AT+CBC"); updateSerial();
-  //MODEM.println("AT+CUSD=1,\"2#\"");getMobNo();
+  MODEM.println("AT+CUSD=1,\"2#\"");updateSerial();
   //MobNo  = MobNoTemp.substring(51, 62);
   //DEBUG.println(MobNo);
   gsm_config_gprs(); delay(2000);
   //Send_GET_Rqst(SRV_IP + PROJECT_NAME + "controller/connect.php/?data=" +  DEV_ID + "," + MOB_NO, "1");
   //delay(3000);
 }
-void getMobNo() {
-  while (DEBUG.available())
-  {
-    MODEM.write(DEBUG.read());//Forward what Serial received to Software Serial Port
-  }
-  while (MODEM.available())
-  {
-    MobNoTemp.concat((char) MODEM.read());
-  }
 
-}
 void gsm_config_gprs() {
   Serial.println(" --- CONFIG GPRS --- ");
 
@@ -228,7 +211,7 @@ void gsm_config_gprs() {
 
 void Send_GET_Rqst(String Data, String methodPram) {
   //DEBUG.println("Sending Data To Server: ");
-  //DEBUG.println("[URL] : " + Data );
+  DEBUG.println("[SRV-URL] : " + Data );
   MODEM.println("AT+HTTPINIT\r\n"); updateSerial();
   MODEM.println("AT+HTTPPARA=\"CID\",1\r\n"); updateSerial();
   MODEM.println("AT+CREG?\r\n"); updateSerial();

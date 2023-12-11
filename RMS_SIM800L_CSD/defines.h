@@ -2,9 +2,15 @@
 #include "UART.h"
 #include "Http.h"
 #include <Wire.h>
+#include "BluetoothSerial.h" // Comment this line after development
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#endif
+BluetoothSerial SerialBT;
+
 #define WIRE Wire
 #define DEV_ID 1
-String MOB_NO = "01675702741";
+String MOB_NO = "01608984560";
 //#define SERIAL_CMD 0
 //#define EE_CMD 0
 #define EE_CHECK_SUM 0
