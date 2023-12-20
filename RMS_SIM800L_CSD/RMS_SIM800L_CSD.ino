@@ -1,19 +1,18 @@
 #include "defines.h"
-String URI =  SRV_IP + PROJECT_PATH;
+String URI = SRV_IP + PROJECT_PATH;
 String URL = URI;
-String val = "";
+String buf = "";
+int EE_Data[] = {};
 String MobNo = "";
 String MobNoTemp = "";
 String IDU_EE_DATA = "";
 String ODU_EE_DATA = "";
 int memCount = 0;
-#define ADDR_Ax 0b000 //A2, A1, A0
+#define ADDR_Ax 0b000  //A2, A1, A0
 #define ADDR (0b1010 << 3) + ADDR_Ax
-void setup()
-{
-  //SerialBT.begin("ESP32 Bluetooth"); // Comment this line after development
-  //DEBUG.begin(DEBUG_BAUD_RATE); // UART DEBUG
-  DEBUG.begin(DEBUG_BAUD_RATE);   // Bluetooth Debeug
+void setup() {
+  DEBUG.begin(DEBUG_BAUD_RATE);
+  // UART2 Configuration
   MODEM.begin(MODEM_BAUD_RATE);
   Wire.begin();
   // UART1 Configuration
@@ -32,28 +31,33 @@ void setup()
   xTaskCreate(UART_ISR_ROUTINE, "UART_ISR_ROUTINE", 2048, NULL, 12, NULL);
   //vTaskDelete(NULL);
   //Configurations
-
-
-  test_sim800_module(); delay(1000);
-  gsm_config_gprs(); delay(1000);
-  //I2C_Bus_Scan(); delay(1000);
-  pinMode (ledPin, OUTPUT);
-  //Send_GET_Rqst(SRV_IP + PROJECT_NAME + "controller/connect.php/?data=" +  DEV_ID + "," + MobNo, "1");
+  test_sim800_module();
+  delay(1000);
+  gsm_config_gprs();
+  delay(1000);
 }
 
 void loop() {
-  //  DEBUG.print("[P1:] ");
-  //  DEBUG.println(ODU_PAC_ONE);
-  //  DEBUG.print("[P2:] ");
-    Send_GET_Rqst(URL + DEV_ID + ";" +  MOB_NO + ";"  + ";" + ODU_PAC_ONE + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
-    DEBUG.println("**********************  START  ********************** ");
-    DEBUG.println(val);
-    explode(",", val);
-    DEBUG.println("**********************   END   ********************** ");
-    val = "";
-    delay(2000);
+  //DEBUG.println(URL);
+  //DEBUG.println(URL + DEV_ID + ";" +  MOB_NO + ";"  +  ODU_PAC_ONE + ";" + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA);
+  Send_GET_Rqst(URL + DEV_ID + ";" +  MOB_NO + ";"  + ";" + ODU_PAC_ONE + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
+  DEBUG.println("**********************  START  ********************** ");
+  DEBUG.print("[MLOP: ]");
+  DEBUG.println(buf);
+  explode(",", buf);
+  //read_data();
+  DEBUG.println("**********************   END   ********************** ");
+  delay(1000);
+  buf = "";
 }
-void explode (char delim[], String rcv_Str) {
+void explode(char delim[], String rcv_Str) {
+  //IDU,0,128,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,25555,255,255,255,255,255,255
+  // Byte_0               = First segment is Dummy
+  // Byte_1               = Start of Address of EEPROM
+  // Byte_02              = Total number of Element to be write
+  // Byte_03_to_Byte_02+1 = EE Data 
+  // Byte_Last            = Summation of Byte_03_to_Byte_02+1
+
   int str_len = rcv_Str.length() + 1;
   int a = 0, c = 0;
   char char_array[str_len], rslt_Arr[str_len];
@@ -62,43 +66,42 @@ void explode (char delim[], String rcv_Str) {
   int decimalVal = 0;
   int strt_pos = 0, totl_Elmnt = 0;
   DEBUG.println("-----------> Start Exploding: ");
-  while (ptr != NULL)
-  {
-    int  strLen = strlen(ptr);
+  while (ptr != NULL) {
+    int strLen = strlen(ptr);
     for (int i = 0; i < strLen; i++) {
-      decimalVal +=  (ptr[i] - '0') * pow(10, (strLen - 1 - i));
+      decimalVal += (ptr[i] - '0') * pow(10, (strLen - 1 - i));
     }
-    int EE_Bus = 0;//I2C_Bus_Scan();
-    if (EE_Bus == 1)
-    {
-      if (a > 0 ) {
-        if (a == 1) {
-          strt_pos = decimalVal;
-          DEBUG.print("\t STRT POS : "); DEBUG.print(strt_pos);
-        }
-        else if (a == 2) {
-          totl_Elmnt = decimalVal + 3;
-          DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
-          //a = strt_pos;
-        }
-        else if ((a > 2) && (a <= totl_Elmnt)) {
-          //totl_Elmnt = decimalVal;
-          //DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
-          //strt_pos;
-          //Serial.print("RX DATA : "); Serial.print(ptr);
-          //DEBUG.print(" Val of A : "); DEBUG.print(strt_pos);
-          DEBUG.print(" Val A : "); DEBUG.print(a);
-          DEBUG.print("\t ADDR : "); DEBUG.print(strt_pos);
-          DEBUG.print("\t DECM : "); DEBUG.println(decimalVal);
-          writeI2CByte(strt_pos, decimalVal);
-          //EE_Data[c] = decimalVal;
-          strt_pos++;
-        }
+    if (a > 0) {
+      if (a == 1) {
+        strt_pos = decimalVal;
+        DEBUG.print("\t STRT POS : ");
+        DEBUG.print(strt_pos);
+      } else if (a == 2) {
+        totl_Elmnt = decimalVal + 3;
+        DEBUG.print("\t TOTL ELM : ");
+        DEBUG.println(totl_Elmnt);
+        //a = strt_pos;
+      } else if ((a > 2) && (a <= totl_Elmnt)) {
+        //totl_Elmnt = decimalVal;
+        //DEBUG.print("\t TOTL ELM : "); DEBUG.println(totl_Elmnt);
+        //strt_pos;
+        //Serial.print("RX DATA : "); Serial.print(ptr);
+        //DEBUG.print(" Val of A : "); DEBUG.print(strt_pos);
+        DEBUG.print(" Val A : ");
+        DEBUG.print(a);
+        DEBUG.print("\t ADDR : ");
+        DEBUG.print(strt_pos);
+        DEBUG.print("\t DECM : ");
+        DEBUG.println(decimalVal);
+        //writeI2CByte(strt_pos, decimalVal);
+        //EE_Data[c] = decimalVal;
+        strt_pos++;
       }
     }
     decimalVal = 0;
     ptr = strtok(NULL, delim);
-    a++; c++;
+    a++;
+    c++;
   }
 }
 static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
@@ -125,6 +128,8 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
               ODU_PAC_ONE_Temp += ",";
             }
             ODU_PAC_ONE = ODU_PAC_ONE_Temp;
+            
+
           }
           if (UART1_data[0] == 187 && UART1_data[1] == 2) {
 
@@ -132,7 +137,9 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
               ODU_PAC_TWO_Temp += (int) UART1_data[i];
               ODU_PAC_TWO_Temp += ",";
             }
+
             ODU_PAC_TWO = ODU_PAC_TWO_Temp;
+            
           }
           //URL = URI; //+ ODU_PAC_ONE + ODU_PAC_TWO;
           ODU_PAC_ONE_Temp = "";
@@ -141,6 +148,7 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
         }
       }
       else if (event.type == UART_FRAME_ERR) {
+
       }
     }
     if (exit_condition) {
@@ -150,46 +158,47 @@ static void UART_ISR_ROUTINE(void *pvParameters)                //uart1
   vTaskDelete(NULL);
 }
 void updateSerial() {
-  digitalWrite (ledPin, LOW);
-  delay(100);
-  while (DEBUG.available())
-  {
-    MODEM.write(DEBUG.read());//Forward what Serial received to Software Serial Port
+  delay(200);
+  while (DEBUG.available()) {
+    MODEM.write(DEBUG.read());  
   }
-  while (MODEM.available())
-  {
-    DEBUG.write(MODEM.read());//Forward what Software Serial received to Serial Port
+  //DEBUG.print("[UPDT: ]");
+  while (MODEM.available()) {
+    DEBUG.write(MODEM.read());  
   }
-  digitalWrite (ledPin, HIGH);
 }
 
 void getData() {
+
   delay(200);
-  while (DEBUG.available())
-  {
-    MODEM.write(DEBUG.read());//Forward what Serial received to Software Serial Port
+  while (MODEM.available()>0) {
+    //memCount++;
+    buf.concat((char)MODEM.read());
+    //buf+=(char)MODEM.read();
+    //    DEBUG.print("C:");
+    //    DEBUG.print(memCount);
+    //    DEBUG.print("\tV:");
+    // DEBUG.println(MODEM.read());
+    //    DEBUG.print(MODEM.read());
   }
-  while (MODEM.available())
-  {
-    val.concat((char) MODEM.read());
-  }
+  
 }
 
-void test_sim800_module()
-{
-  //delay(10000);
-  MODEM.println("AT");  updateSerial();
-  MODEM.println("AT+CSQ");  updateSerial();
-  MODEM.println("AT+CCID");  updateSerial();
-  MODEM.println("AT+CREG?");  updateSerial();
-  MODEM.println("ATI");  updateSerial();
-  MODEM.println("AT+CBC"); updateSerial();
-  MODEM.println("AT+CUSD=1,\"2#\"");updateSerial();
-  //MobNo  = MobNoTemp.substring(51, 62);
-  //DEBUG.println(MobNo);
-  gsm_config_gprs(); delay(2000);
-  //Send_GET_Rqst(SRV_IP + PROJECT_NAME + "controller/connect.php/?data=" +  DEV_ID + "," + MOB_NO, "1");
-  //delay(3000);
+void test_sim800_module() {
+  MODEM.println("AT");
+  updateSerial();
+  MODEM.println("AT+CSQ");
+  updateSerial();
+  MODEM.println("AT+CCID");
+  updateSerial();
+  MODEM.println("AT+CREG?");
+  updateSerial();
+  MODEM.println("ATI");
+  updateSerial();
+  MODEM.println("AT+CBC");
+  updateSerial();
+  // MODEM.println("AT+CUSD=1,\"2#\"");
+  // updateSerial();
 }
 
 void gsm_config_gprs() {
@@ -210,24 +219,38 @@ void gsm_config_gprs() {
 }
 
 void Send_GET_Rqst(String Data, String methodPram) {
-  //DEBUG.println("Sending Data To Server: ");
-  DEBUG.println("[SRV-URL] : " + Data );
-  MODEM.println("AT+HTTPINIT\r\n"); updateSerial();
-  MODEM.println("AT+HTTPPARA=\"CID\",1\r\n"); updateSerial();
-  MODEM.println("AT+CREG?\r\n"); updateSerial();
-  MODEM.println("AT+SAPBR=2,1\r\n"); updateSerial();
-  MODEM.println("AT+SAPBR=1,1\r\n"); updateSerial();
-  MODEM.println("AT+HTTPINIT\r\n"); updateSerial();
-  MODEM.println("AT+HTTPPARA=URL,\"" + Data +  "\"\r\n"); updateSerial();
-  MODEM.println("AT+HTTPPARA=\"CONTENT\",\"application / text\""); updateSerial();
+   DEBUG.println("[URL] : " + Data);
+  MODEM.println("AT+HTTPINIT\r\n");
+  updateSerial();
+  MODEM.println("AT+HTTPPARA=\"CID\",1\r\n");
+  updateSerial();
+  MODEM.println("AT+CREG?\r\n");
+  updateSerial();
+  MODEM.println("AT+SAPBR=2,1\r\n");
+  updateSerial();
+  MODEM.println("AT+SAPBR=1,1\r\n");
+  updateSerial();
+  MODEM.println("AT+HTTPINIT\r\n");
+  updateSerial();
+  MODEM.println("AT+HTTPPARA=URL,\"" + Data + "\"\r\n");
+  updateSerial();
+  MODEM.println("AT+HTTPPARA=\"CONTENT\",\"application / text\"");
+  updateSerial();
   String ActionCMD = "AT + HTTPACTION = " + methodPram + "\r\n";
-  MODEM.println(ActionCMD); delay(2500); updateSerial();
-  MODEM.println("AT+HTTPREAD"); delay(2000); getData();
-  MODEM.println("AT + HTTPTERM\r\n"); updateSerial();
+  MODEM.println(ActionCMD);
+  delay(500);
+  updateSerial();
+  delay(2000);
+  MODEM.println("AT+HTTPREAD\r\n");
+  delay(500);
+  getData();
+  //MODEM.println("WAIT=6");
+  MODEM.println("AT + HTTPTERM\r\n");
+  updateSerial();
 }
 
 void writeI2CByte(int wr_data_addr, int wrtData) {
-  byte slaveAddr = ( wr_data_addr < 256 ) ? ADDR_ONE : ADDR_TWO;
+  byte slaveAddr = (wr_data_addr < 256) ? ADDR_ONE : ADDR_TWO;
   Wire.beginTransmission(ADDR_ONE);
   Wire.write(wr_data_addr);
   Wire.write(wrtData);
@@ -239,9 +262,11 @@ void read_data() {
   short tempRdData;
   Serial.println("IDU Data Reading Start: ");
   for (int i = 0; i < arr_counter; i++) {
-    Serial.print("ADD: "); Serial.print(i);
+    Serial.print("ADD: ");
+    Serial.print(i);
     tempRdData = readI2CByte(i);
-    Serial.print("EE: "); Serial.println(tempRdData, HEX);
+    Serial.print("EE: ");
+    Serial.println(tempRdData, HEX);
     chkSum += tempRdData;
     delay(10);
   }
@@ -256,49 +281,10 @@ byte readI2CByte(byte data_addr) {
   Wire.beginTransmission(ADDR);
   Wire.write(data_addr);
   Wire.endTransmission();
-  Wire.requestFrom(ADDR, 1); //retrieve 1 returned byte
+  Wire.requestFrom(ADDR, 1);  //retrieve 1 returned byte
   delay(1);
   if (Wire.available()) {
     data = Wire.read();
   }
   return data;
-}
-
-int I2C_Bus_Scan() {
-  byte error, address;
-  int nDevices;
-
-  Serial.println("Scanning...");
-
-  nDevices = 80;
-
-  WIRE.beginTransmission(address);
-  error = WIRE.endTransmission();
-
-  if (error == 0)
-  {
-    Serial.print("I2C device found at address 0x");
-    if (address < 16)
-      Serial.print("0");
-    Serial.print(address, HEX);
-    nDevices++;
-    return 1;
-  }
-  else if (error == 4)
-  {
-    Serial.print("Unknown error at address 0x");
-    if (address < 16)
-      Serial.print("0");
-    Serial.println(address, HEX);
-    return 0;
-  }
-
-  if (nDevices == 0) {
-    Serial.println("No I2C devices found\n");
-    return 0;
-  }
-  else {
-    Serial.println("done\n");
-    return 0;
-  }
 }
