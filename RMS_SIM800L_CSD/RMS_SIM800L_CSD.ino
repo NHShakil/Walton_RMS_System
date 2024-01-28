@@ -1,8 +1,8 @@
 #include "defines.h"
 
 void setup() {
-  //DEBUG.begin("ESP32test");
-  DEBUG.begin(DEBUG_BAUD_RATE);
+  DEBUG.begin("ESP32test");
+  //DEBUG.begin(DEBUG_BAUD_RATE);
   // UART2 Configuration
   MODEM.begin(MODEM_BAUD_RATE);
   Wire.begin();
@@ -26,29 +26,45 @@ void setup() {
   delay(1000);
   gsm_config_gprs();
   delay(1000);
+  //ESP.restart();
 }
 
 void loop() {
 
+  // readCompModel();
+  // delay(10);
+  // if (mode == 0) {
+  //   DEBUG.println("Func Mod : 0");
+  //   Send_GET_Rqst(URL + DEV_ID + ";" + MOB_NO + ";" + sigLvl + ";" + ";" + ";;" + ";;" + ";;", "0");
+  //   DEBUG.print("*********************");
+  //   DEBUG.println(srvResPns);
+  //   DEBUG.print("#####################");
+  //   explode(",", srvResPns);
+  //   delay(1000);
+  // }
+  // //if (mode = 1) {
+  // readCompModel();
+  // delay(10);
+  // DEBUG.println("Func Mod : 1");
+  // //Send_GET_Rqst(URL + DEV_ID + ";" + MOB_NO + ";" + sigLvl + ";" + ODU_PAC_ONE + ";" + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
+  // Send_GET_Rqst(URL + DEV_ID + ";" + MOB_NO + ";" + sigLvl + ";" + ODU_PAC_ONE + ";" + ODU_PAC_TWO + ";" + ODU_PAC_THREE + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
+  // DEBUG.print("*********************");
+  // DEBUG.println(srvResPns);
+  // DEBUG.print("#####################");
+  // explode(",", srvResPns);
+  // delay(1000);
+  // //}
+  readCompModel();
+  delay(100);
+  eePortType = detect_ee();
+  delay(100);
+  Send_GET_Rqst(URL + DEV_ID + ";" + MOB_NO + ";" + sigLvl + ";" + ODU_PAC_ONE + ";" + ODU_PAC_TWO + ";" + ODU_PAC_THREE + ";" + eePortType + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
+  DEBUG.print("*********************");
+  DEBUG.println(srvResPns);
+  DEBUG.print("#####################");
+  explode(",", srvResPns);
+  delay(1000);
 
-  if (mode = 0) {
-    DEBUG.println("Func Mod : 0");
-    Send_GET_Rqst(URL + DEV_ID + ";" + MOB_NO + ";" + SigLvl + ";" + ";" + ";;" + ";;" + ";;", "0");
-    DEBUG.print("*********************");
-    DEBUG.println(srvResPns);
-    DEBUG.print("#####################");
-    explode(",", srvResPns);
-    delay(1000);
-  }
-  if (mode = 1) {
-    DEBUG.println("Func Mod : 1");
-    Send_GET_Rqst(URL + DEV_ID + ";" + MOB_NO + ";" + SigLvl + ";" + ODU_PAC_ONE + ";" + ODU_PAC_TWO + ";" + IDU_EE_DATA + ";" + ODU_EE_DATA, "0");
-    DEBUG.print("*********************");
-    DEBUG.println(srvResPns);
-    DEBUG.print("#####################");
-    explode(",", srvResPns);
-    delay(1000);
-  }
 
   srvResPns = "";
 }
@@ -82,7 +98,7 @@ void explode(char delim[], String rcv_Str) {
         DEBUG.println(end_pos);
         //a = strt_pos;
       } else if (a == 4) {
-        totl_Elmnt = decimalVal+4;
+        totl_Elmnt = decimalVal + 4;
         DEBUG.print("\t TOTL ELM : ");
         DEBUG.println(totl_Elmnt);
         //a = strt_pos;
@@ -106,7 +122,6 @@ void explode(char delim[], String rcv_Str) {
     decimalVal = 0;
     ptr = strtok(NULL, delim);
     a++;
-    c++;
   }
 }
 static void UART_ISR_ROUTINE(void *pvParameters)  //uart1
@@ -116,8 +131,10 @@ static void UART_ISR_ROUTINE(void *pvParameters)  //uart1
   bool exit_condition = false;
   String ODU_PAC_ONE_Temp = "";
   String ODU_PAC_TWO_Temp = "";
+  String ODU_PAC_Three_Temp = "";
   ODU_PAC_ONE = "";
   ODU_PAC_TWO = "";
+  ODU_PAC_THREE = "";
   while (1) {
     if (xQueueReceive(uart1_queue, (void *)&event, (portTickType)portMAX_DELAY)) {
       if (event.type == UART_DATA) {
@@ -125,27 +142,39 @@ static void UART_ISR_ROUTINE(void *pvParameters)  //uart1
         int UART1_data_length = 0;
         ESP_ERROR_CHECK(uart_get_buffered_data_len(UART_NUM_1, (size_t *)&UART1_data_length));
         UART1_data_length = uart_read_bytes(UART_NUM_1, UART1_data, UART1_data_length, 100);
-        if (UART1_data_length == ODU_DATA_SIZE) {
-          if (UART1_data[0] == 170) {
+        for (byte i = 0; i < UART1_data_length; i++) {
+          DEBUG.print((int)UART1_data[i]);
+          DEBUG.print(",");
+          
+        }
+        DEBUG.println("");
+
+        if (UART1_data_length == ODU_RSPNS_PAC_SIZE) {
+          if (UART1_data[0] == 187) {// && UART1_data[1] == 2) {
             for (byte i = 0; i < UART1_data_length; i++) {
-              //DEBUG.println((int)UART1_data[i]);
+              ODU_PAC_TWO_Temp += (int)UART1_data[i];
+              ODU_PAC_TWO_Temp += ",";
+            }
+            ODU_PAC_TWO = ODU_PAC_TWO_Temp;
+          } else if (UART1_data[0] == 170 ) {//&& UART1_data[1] == 20) {
+            for (byte i = 0; i < UART1_data_length; i++) {
+              ODU_PAC_Three_Temp += (int)UART1_data[i];
+              ODU_PAC_Three_Temp += ",";
+            }
+            ODU_PAC_THREE = ODU_PAC_Three_Temp;
+          } else {
+            for (byte i = 0; i < UART1_data_length; i++) {
               ODU_PAC_ONE_Temp += (int)UART1_data[i];
               ODU_PAC_ONE_Temp += ",";
             }
             ODU_PAC_ONE = ODU_PAC_ONE_Temp;
           }
-          if (UART1_data[0] == 187 && UART1_data[1] == 2) {
-            for (byte i = 0; i < UART1_data_length; i++) {
-              //DEBUG.println((int)UART1_data[i]);
-              ODU_PAC_TWO_Temp += (int)UART1_data[i];
-              ODU_PAC_TWO_Temp += ",";
-            }
-            ODU_PAC_TWO = ODU_PAC_TWO_Temp;
-          }
-          ODU_PAC_ONE_Temp = "";
-          ODU_PAC_TWO_Temp = "";
-          url_pram = "";
         }
+        ODU_PAC_ONE_Temp = "";
+        ODU_PAC_TWO_Temp = "";
+        ODU_PAC_Three_Temp = "";
+        url_pram = "";
+
       } else if (event.type == UART_FRAME_ERR) {
       }
     }
@@ -160,14 +189,12 @@ void updateSerial() {
   while (DEBUG.available()) {
     MODEM.write(DEBUG.read());
   }
-  //DEBUG.print("[UPDT: ]");
   while (MODEM.available()) {
     DEBUG.write(MODEM.read());
   }
 }
 
 void getData() {
-
   delay(200);
   while (MODEM.available() > 0) {
     srvResPns.concat((char)MODEM.read());
@@ -187,8 +214,6 @@ void test_sim800_module() {
   updateSerial();
   MODEM.println("AT+CBC");
   updateSerial();
-  // MODEM.println("AT+CUSD=1,\"2#\"");
-  // updateSerial();
 }
 
 void gsm_config_gprs() {
@@ -275,4 +300,33 @@ byte readI2CByte(byte data_addr) {
     data = Wire.read();
   }
   return data;
+}
+int detect_ee() {
+  byte error, address;
+  int nDevices;
+  nDevices = 0;
+  for (address = 80; address < 82; address++) {
+    WIRE.beginTransmission(address);
+    error = WIRE.endTransmission();
+    if (error == 0) {
+      nDevices++;
+    }
+  }
+  return nDevices;
+}
+void readCompModel() {
+  // for (unsigned int on_B = 0; on_B < 4; on_B++) {
+  //   const char x = (int16_t)compModel[on_B];
+  //   uart_write_bytes(UART_NUM_1, &x, 1);
+  // }
+  uart_write_bytes(UART_NUM_1, &compModel[0], 1);
+  delay(2);
+  uart_write_bytes(UART_NUM_1, &compModel[1], 1);
+  delay(2);
+  uart_write_bytes(UART_NUM_1, &compModel[2], 1);
+  delay(2);
+  uart_write_bytes(UART_NUM_1, &compModel[3], 1);
+  delay(2);
+  uart_write_bytes(UART_NUM_1, &compModel[4], 1);
+  delay(2);
 }

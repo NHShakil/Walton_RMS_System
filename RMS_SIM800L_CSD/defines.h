@@ -12,15 +12,15 @@ BluetoothSerial SerialBT;
 #include "UART.h"
 #include "Http.h"
 #include <Wire.h>
-
+#define WIRE Wire
 #define DEV_ID 1
 #define EE_CHECK_SUM 0
-#define ODU_DATA_SIZE 38
+#define ODU_RSPNS_PAC_SIZE 38
 #define MODEM Serial2
 #define MODEM_BAUD_RATE 9600
 #define UART1_ODU_BAUD_RATE 2400
-//#define DEBUG SerialBT 
-#define DEBUG Serial 
+#define DEBUG SerialBT 
+//#define DEBUG Serial 
 #define DEBUG_BAUD_RATE 9600
 #define U1RXD 33
 #define U1TXD 32
@@ -31,9 +31,9 @@ BluetoothSerial SerialBT;
 
 
 // GLOBAL VARIABL
-int oduData[ODU_DATA_SIZE];
+int oduData[ODU_RSPNS_PAC_SIZE];
 int mode = 0;
-int SigLvl = 0;
+int eePortType = 0;
 
 
 // APN information for GPRS  Communication 
@@ -50,9 +50,11 @@ String PRAM = "";
 String URI = SRV_IP + PROJECT_PATH;
 String URL = URI;
 String srvResPns = "";
+String sigLvl = "";
 String url_pram = "";
 String ODU_PAC_ONE = "";
 String ODU_PAC_TWO = "";
+String ODU_PAC_THREE = "";
 String IDU_EE_DATA = "";
 String ODU_EE_DATA = "";
 String MOB_NO = "01608984560";
@@ -60,11 +62,4 @@ String MOB_NO = "01608984560";
 short chkSum = 0, chkData = 0, arr_counter = 256;
 
 
-
-
-
-
-
-
-
-
+byte compModel[5]  = {0xAA, 0x05, 0x00, 0xFB, 0x55};
